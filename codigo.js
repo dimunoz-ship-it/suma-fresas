@@ -1,64 +1,85 @@
-// Revisa un campo apenas el usuario sale de él (evento onchange en el HTML).
-// Si el valor está fuera de rango, avisa y limpia el campo.
-function verificar(id, max) {
-  const campo = document.getElementById(id);
-  const valor = parseInt(campo.value, 10);
+const grupoA = document.getElementById("grupoA");
+const grupoB = document.getElementById("grupoB");
+const zona = document.getElementById("zona");
+const mensaje = document.getElementById("mensaje");
+const fresaOrigen = document.getElementById("fresaOrigen");
 
-  if (isNaN(valor) || valor < 0 || valor > max) {
-    campo.classList.add("invalido");
-    mostrarMensaje("Ese valor debe estar entre 0 y " + max);
-  } else {
-    campo.classList.remove("invalido");
-  }
+let total = 0;
+
+function aleatorio(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function mostrarMensaje(texto) {
-  document.getElementById("mensaje").textContent = texto;
+function dibujar(contenedor, n) {
+    contenedor.innerHTML = "";
+    for (let i = 0; i < n; i++) {
+        const img = document.createElement("img");
+        img.src = "fresa.png";
+        img.alt = "fresa";
+        img.draggable = false;   
+        contenedor.appendChild(img);
+    }
 }
 
-function calcular() {
-  const hi = parseInt(document.getElementById("hi").value, 10);
-  const mi = parseInt(document.getElementById("mi").value, 10);
-  const si = parseInt(document.getElementById("si").value, 10);
-  const hf = parseInt(document.getElementById("hf").value, 10);
-  const mf = parseInt(document.getElementById("mf").value, 10);
-  const sf = parseInt(document.getElementById("sf").value, 10);
+function nuevaSuma() {
+    const a = aleatorio(1, 10);
+    let b;
+    do {
+        b = aleatorio(1, 10);
+    } while (b === a);          
 
-  const sello = document.getElementById("sello");
-  sello.classList.remove("visible");
-
-  if (isNaN(hi) || isNaN(mi) || isNaN(si) ||
-      hi < 0 || hi > 23 || mi < 0 || mi > 59 || si < 0 || si > 59) {
-    mostrarMensaje("Revisa la hora inicial");
-    return;
-  }
-
-  if (isNaN(hf) || isNaN(mf) || isNaN(sf) ||
-      hf < 0 || hf > 23 || mf < 0 || mf > 59 || sf < 0 || sf > 59) {
-    mostrarMensaje("Revisa la hora final");
-    return;
-  }
-
-  const segundosInicial = (hi * 3600) + (mi * 60) + si;
-  const segundosFinal = (hf * 3600) + (mf * 60) + sf;
-
-  if (segundosInicial >= segundosFinal) {
-    mostrarMensaje("La hora final debe ser mayor que la inicial");
-    return;
-  }
-
-  const diferencia = segundosFinal - segundosInicial;
-
-  const sr = diferencia % 60;
-  const mr = Math.floor(diferencia / 60) % 60;
-  const hr = Math.floor(diferencia / 3600);
-
-  document.getElementById("hr").value = hr;
-  document.getElementById("mr").value = mr;
-  document.getElementById("sr").value = sr;
-
-  mostrarMensaje("");
-  sello.classList.add("visible");
+    total = a + b;
+    dibujar(grupoA, a);
+    dibujar(grupoB, b);
+    zona.innerHTML = "";
+    mensaje.textContent = "";
+    mensaje.className = "mensaje";
 }
 
-document.getElementById("btnCalcular").addEventListener("click", calcular);
+fresaOrigen.addEventListener("dragstart", function (e) {
+    e.dataTransfer.setData("text/plain", "fresa");
+    e.dataTransfer.effectAllowed = "copy";
+});
+
+zona.addEventListener("dragover", function (e) {
+    e.preventDefault();                 
+    zona.classList.add("encima");
+});
+
+zona.addEventListener("dragleave", function () {
+    zona.classList.remove("encima");
+});
+
+zona.addEventListener("drop", function (e) {
+    e.preventDefault();
+    zona.classList.remove("encima");
+    if (zona.children.length >= 20) return;
+
+    const clon = fresaOrigen.cloneNode();   
+    clon.removeAttribute("id");
+    clon.className = "";
+    clon.draggable = false;
+    clon.title = "Clic para quitar";
+    clon.addEventListener("click", function () {
+        clon.remove();
+    });
+    zona.appendChild(clon);
+});
+
+document.getElementById("btnVerificar").addEventListener("click", function () {
+    const cantidad = zona.children.length;
+    if (cantidad === 0) {
+        mensaje.textContent = "Arrastra fresas a la cesta 🍓";
+        mensaje.className = "mensaje error";
+    } else if (cantidad === total) {
+        mensaje.textContent = "¡Muy bien! Es correcto 🎉";
+        mensaje.className = "mensaje ok";
+    } else {
+        mensaje.textContent = "Casi... ¡inténtalo otra vez!";
+        mensaje.className = "mensaje error";
+    }
+});
+
+document.getElementById("btnReiniciar").addEventListener("click", nuevaSuma);
+
+nuevaSuma();
